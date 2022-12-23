@@ -88,11 +88,13 @@ def evaluate(args):
 		cnt_per_category[gt_label] += 1
 
 		gt_prog = data_processor.ids_to_prog(item, item['output_gt'])
+		print('gt_prog ', gt_prog, '\n')
 
 		if data_utils._PAD in gt_prog:
 			cnt_unpredictable += 1
 
 		pred_prog  = data_processor.ids_to_prog(item, predictions[i])
+		print('pred_prog ', pred_prog, "\n")
 
 		pred_label = data_processor.label_extraction(pred_prog)
 		if args.joint_plot_types:
@@ -130,6 +132,21 @@ def evaluate(args):
 		print('label acc per category: ', i, label_acc_per_category[i], label_acc_per_category[i] * 1.0 / cnt_per_category[i])
 		print('data acc per category: ', i, data_acc_per_category[i], data_acc_per_category[i] * 1.0 / cnt_per_category[i])
 		print('acc per category: ', i, acc_per_category[i], acc_per_category[i] * 1.0 / cnt_per_category[i])
+		
+def inference(args):
+	data_processor = data_utils.DataProcessor(args)
+	init_test_data = data_processor.load_data(args.test_dataset)
+	test_data, test_indices = data_processor.preprocess(init_test_data)
+
+	args.word_vocab_size = data_processor.word_vocab_size
+	args.code_vocab_size = data_processor.code_vocab_size
+	model_supervisor = create_model(args, data_processor.word_vocab, data_processor.code_vocab)
+	predictions = model_supervisor.inference(test_data)
+	for i, item in enumerate(test_data):
+		gt_prog = data_processor.ids_to_prog(item, item['output_gt'])
+		print("gt_prog", gt_prog, "\n") #important
+		pred_prog = data_processor.ids_to_prog(item, predictions[i])
+		print("Prediction: ","".join(pred_prog[:-1])) #important
 
 
 if __name__ == "__main__":
@@ -140,5 +157,7 @@ if __name__ == "__main__":
 	np.random.seed(args.seed)
 	if args.eval:
 		evaluate(args)
+	elif args.inference:
+		inference(args)
 	else:
 		train(args)	

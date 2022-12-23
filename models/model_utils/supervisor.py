@@ -121,3 +121,18 @@ class Supervisor(object):
 		test_acc = test_acc * 1.0 / data_size
 		self.model.train()
 		return test_loss, test_label_acc, test_data_acc, test_acc, predictions
+
+	def inference(self, data):
+		self.model.eval()
+		data_size = len(data)
+		eval_data = data[:data_size]
+		predictions = []
+		for batch_idx in range(0, data_size, self.batch_size):
+			batch_size = self.batch_size
+			if min(batch_idx + batch_size, data_size)%self.batch_size != 0:
+				batch_size = min(batch_idx + batch_size, data_size) - batch_idx
+			batch_input = self.data_processor.post_get_batch(eval_data, self.batch_size, batch_idx)
+			cur_predictions = self.model.post_forward(batch_input, batch_size)
+			cur_predictions = cur_predictions.data.cpu().numpy().tolist()
+			predictions += cur_predictions
+		return predictions
