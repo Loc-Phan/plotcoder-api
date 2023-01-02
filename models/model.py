@@ -366,6 +366,7 @@ class PlotCodeGenerator(nn.Module):
 	def post_forward(self, batch_input, batch_size):
 		batch_init_data = batch_input['init_data']
 		batch_nl_input = batch_input['nl']
+		
 		batch_nl_embedding = self.word_embedding(batch_nl_input)
 		encoder_word_mask = (batch_nl_input == data_utils.PAD_ID).float()
 		encoder_word_mask = torch.max(encoder_word_mask, (batch_nl_input == data_utils.UNK_ID).float())

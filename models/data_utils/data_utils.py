@@ -209,8 +209,6 @@ class DataProcessor(object):
 		init_samples = json.load(open(filename, 'r'))
 		samples = []
 		for sample in init_samples:
-			code_seq = sample['code_tokens']
-			label = self.label_extraction(code_seq)
 			samples.append(sample)
 		return samples
 
@@ -424,7 +422,7 @@ class DataProcessor(object):
 		data = []
 		indices = []
 		cnt_word = 0
-		cnt_code = 0
+		cnt_code = 0	
 		max_target_code_seq_len = 0
 		min_target_code_seq_len = 512
 		for sample_idx, sample in enumerate(samples):
@@ -700,6 +698,7 @@ class DataProcessor(object):
 				i += 1
 
 			code_seq = code_seq[keyword_pos:]
+			# print(code_seq)
 			target_code_seq = []
 			selected_code_idx = 0
 			code_idx = 0
@@ -708,6 +707,7 @@ class DataProcessor(object):
 				if not (tok in self.reserved_words):
 					code_idx += 1
 					continue
+				print('code_seq[code_idx + 1]: ',code_seq[code_idx + 1])
 				if code_idx == len(code_seq) - 1 or code_seq[code_idx + 1] != '(':
 					code_idx += 1
 					continue
@@ -806,6 +806,7 @@ class DataProcessor(object):
 				code_idx = ed_idx + 1
 			
 			init_target_code_seq = target_code_seq[:]
+			# print(init_target_code_seq)
 			target_code_seq = self.code_seq_transform(target_code_seq, reserved_dfs)
 
 			label = self.label_extraction(target_code_seq)
@@ -1231,6 +1232,488 @@ class DataProcessor(object):
 		print('Number of samples (after filtering): ', len(data))
 		print('code seq len: min: ', min_target_code_seq_len, 'max: ', max_target_code_seq_len)
 		return data, indices
+
+	def post_preprocess(self, samples):
+		data = []
+		for sample_idx, sample in enumerate(samples):
+			reserved_df_size = 0
+			reserved_dfs = []
+			reserved_df_attr_list = []
+			reserved_str_size = 0
+			reserved_strs = []
+			reserved_vars = []
+			reserved_var_size = 0
+
+			code_context_cell_cnt = 0
+			if self.local_df_only:
+				max_num_code_cells = self.max_num_code_cells
+			else:
+				max_num_code_cells = len(sample['context'])
+			for ctx_idx in range(len(sample['context'])):
+				if code_context_cell_cnt == max_num_code_cells:
+					break
+				if not 'code_tokens' in sample['context'][ctx_idx]:
+					continue
+				cur_code_context = sample['context'][ctx_idx]['code_tokens']
+				if type(cur_code_context) != list:
+					continue
+				code_context_cell_cnt += 1
+				for i in range(len(cur_code_context)):
+					if cur_code_context[i] in self.reserved_words:
+						continue
+					if i > 0 and i < len(cur_code_context) - 2 and cur_code_context[i] == '[' and cur_code_context[i + 1][0] in ["'", '"'] and cur_code_context[i + 2] == ']':
+						if cur_code_context[i - 1] in ['[', ']', '(', ')', '=', ',']:
+							continue
+						if cur_code_context[i - 1] not in reserved_dfs:
+							reserved_dfs.append(cur_code_context[i - 1])
+							reserved_df_attr_list.append([])
+					if i >= 4 and cur_code_context[i] == 'read_csv' and cur_code_context[i - 1] == '.' and cur_code_context[i - 2] == 'pd' and cur_code_context[i - 3] == '=':
+						if cur_code_context[i - 4] in ['[', ']', '(', ')', '=', ',']:
+							continue
+						if not (cur_code_context[i - 4] in reserved_dfs):
+							reserved_dfs.append(cur_code_context[i - 4])
+							reserved_df_attr_list.append([])
+					if i >= 4 and cur_code_context[i] == 'DataFrame' and cur_code_context[i - 1] == '.' and cur_code_context[i - 2] == 'pd' and cur_code_context[i - 3] == '=':
+						if cur_code_context[i - 4] in ['[', ']', '(', ')', '=', ',']:
+							continue
+						if not (cur_code_context[i - 4] in reserved_dfs):
+							reserved_dfs.append(cur_code_context[i - 4])
+							reserved_df_attr_list.append([])
+					if i >= 4 and cur_code_context[i] == 'DataReader' and cur_code_context[i - 1] == '.' and cur_code_context[i - 2] == 'data' and cur_code_context[i - 3] == '=':
+						if cur_code_context[i - 4] in ['[', ']', '(', ')', '=', ',']:
+							continue
+						if not (cur_code_context[i - 4] in reserved_dfs):
+							reserved_dfs.append(cur_code_context[i - 4])
+							reserved_df_attr_list.append([])
+					if i >= 2 and i < len(cur_code_context) - 2 and cur_code_context[i] == 'head' and cur_code_context[i - 1] == '.' \
+					and cur_code_context[i + 1] == '(' and cur_code_context[i + 2] == ')':
+						if cur_code_context[i - 2] in ['[', ']', '(', ')', '=', ',']:
+							continue
+						if not (cur_code_context[i - 2] in reserved_dfs):
+							reserved_dfs.append(cur_code_context[i - 2])
+							reserved_df_attr_list.append([])
+					if i >= 4 and cur_code_context[i] == 'load' and cur_code_context[i - 1] == '.' and cur_code_context[i - 2] == 'np' and cur_code_context[i - 3] == '=':
+						if cur_code_context[i - 4] in ['[', ']', '(', ')', '=', ',']:
+							continue
+						if not (cur_code_context[i - 4] in reserved_dfs):
+							reserved_dfs.append(cur_code_context[i - 4])
+							reserved_df_attr_list.append([])
+			
+			code_context = []
+			code_context_cell_cnt = 0
+			for ctx_idx in range(len(sample['context'])):
+				if code_context_cell_cnt == max_num_code_cells:
+					break
+				if not 'code_tokens' in sample['context'][ctx_idx]:
+					continue
+				init_cur_code_context = sample['context'][ctx_idx]['code_tokens']
+				if type(init_cur_code_context) != list:
+					continue
+				cur_code_context = []
+				for tok in init_cur_code_context:
+					if len(tok) == 0 or tok[0] == '#':
+						continue
+					cur_code_context.append(tok)
+				selected_code_context = []
+				i = 0
+				while i < len(cur_code_context):
+					if cur_code_context[i] in reserved_dfs:
+						df_idx = reserved_dfs.index(cur_code_context[i])
+						selected = False
+						csv_reading = False
+						st = i - 1
+						while st >= 0 and cur_code_context[st] != '\n':
+							if cur_code_context[st] == 'read_csv':
+								csv_reading = True
+							st -= 1
+						ed = i + 1
+						while ed < len(cur_code_context) and cur_code_context[ed] != '\n':
+							if cur_code_context[ed] == 'read_csv':
+								csv_reading = True
+							ed += 1
+						while ed < len(cur_code_context):
+							if cur_code_context[ed] == 'read_csv':
+								csv_reading = True
+
+							parse_error = False
+							try:
+								ast_tree = ast2json.ast2json(ast.parse(''.join(cur_code_context[st + 1:ed + 1])))
+							except:
+								parse_error = True
+							if not parse_error:
+								break
+							ed += 1
+						if csv_reading:
+							i = ed + 1
+							continue
+						for tok_idx in range(st + 1, ed):
+							if cur_code_context[tok_idx] in self.reserved_words:
+								continue
+							if len(cur_code_context[tok_idx]) > 2 and cur_code_context[tok_idx][0] in ["'", '"'] and cur_code_context[tok_idx][-1] in ["'", '"'] and not (cur_code_context[tok_idx][1:-1] in reserved_df_attr_list[df_idx]):
+								if not ('.csv' in cur_code_context[tok_idx] or cur_code_context[tok_idx - 1] == '='):
+									reserved_df_attr_list[df_idx].append(cur_code_context[tok_idx][1:-1])
+									if cur_code_context[tok_idx][1:-1] not in reserved_strs:
+										reserved_strs.append(cur_code_context[tok_idx][1:-1])
+										reserved_str_size += 1
+								selected = True
+						if selected:
+							if len(selected_code_context) > 0 and selected_code_context[-1] != '\n':
+								selected_code_context += ['\n']
+							selected_code_context = selected_code_context + cur_code_context[st + 1: ed + 1]
+							i = ed + 1
+							continue
+					if cur_code_context[i] == 'savez':
+						st = i - 1
+						while st >= 0 and cur_code_context[st] != '\n':
+							st -= 1
+						ed = i + 1
+						while ed < len(cur_code_context) and cur_code_context[ed] != '\n':
+							ed += 1
+						while ed < len(cur_code_context):
+							parse_error = False
+							try:
+								ast_tree = ast2json.ast2json(ast.parse(''.join(cur_code_context[st + 1:ed + 1])))
+							except:
+								parse_error = True
+							if not parse_error:
+								break
+							ed += 1
+
+						if 'body' not in ast_tree:
+							i += 1
+							continue
+
+						ast_tree = ast_tree['body'][0]['value']
+						if 'keywords' in ast_tree:
+							kvs = ast_tree['keywords']
+							for i in range(len(kvs)):
+								kv = kvs[i]
+								if kv['arg'] not in reserved_strs:
+									reserved_strs.append(kv['arg'])
+									reserved_str_size += 1
+							selected = True
+
+						if selected:
+							if len(selected_code_context) > 0 and selected_code_context[-1] != '\n':
+								selected_code_context += ['\n']
+							selected_code_context = selected_code_context + cur_code_context[st + 1: ed + 1]
+							i = ed + 1
+							continue
+					
+					i += 1
+				if code_context_cell_cnt < self.max_num_code_cells:
+					
+					if len(code_context) > 0 and len(cur_code_context) > 0 and cur_code_context[-1] != '\n':
+						code_context = ['\n'] + code_context
+					reserved_vars = self.var_extraction(cur_code_context, reserved_vars, reserved_dfs)
+					code_context = cur_code_context + code_context
+					code_context_cell_cnt += 1
+				else:
+					
+					if len(code_context) > 0 and len(selected_code_context) > 0 and selected_code_context[-1] != '\n':
+						code_context = ['\n'] + code_context
+					code_context = selected_code_context + code_context
+					
+					reserved_vars = self.var_extraction(selected_code_context, reserved_vars, reserved_dfs)
+			input_word_seq = []
+
+			if self.nl and not self.use_comments:
+				nl = sample['nl']
+				nl = nl[:self.max_word_len - 1]
+			elif self.use_comments and not self.nl:
+				nl = sample['comments']
+				nl = nl[:self.max_word_len - 1]
+			elif not self.nl and not self.use_comments:
+				nl = []
+			else:
+				nl = sample['nl'] + sample['comments']
+				if len(nl) > self.max_word_len - 1:
+					if len(sample['comments']) <= self.max_word_len // 2:
+						nl = sample['nl'][:self.max_word_len - 1 - len(sample['comments'])] + sample['comments']
+					elif len(sample['nl']) <= self.max_word_len // 2:
+						nl = sample['nl'] + sample['comments'][:self.max_word_len - 1 - len(sample['nl'])]
+					else:
+						nl = sample['nl'][:self.max_word_len // 2 - 1] + sample['comments'][:self.max_word_len // 2]
+
+			if not self.code_context:
+				code_context = []
+			if len(code_context) > self.max_code_context_len - 1:
+				code_context = code_context[1 - self.max_code_context_len:]
+			init_reserved_dfs = list(reserved_dfs)
+			for tok in init_reserved_dfs:
+				if not (tok in code_context):
+					reserved_dfs.remove(tok)
+			reserved_df_size = len(reserved_dfs)
+
+			init_reserved_strs = list(reserved_strs)
+			for tok in init_reserved_strs:
+				if not ('"' + tok + '"' in code_context or "'" + tok + "'" in code_context or tok in code_context):
+					reserved_strs.remove(tok)
+			reserved_str_size = len(reserved_strs)
+
+			init_reserved_vars = list(reserved_vars)
+			for tok in init_reserved_vars:
+				if not (tok in code_context):
+					reserved_vars.remove(tok)
+			reserved_var_size = len(reserved_vars)
+
+			input_code_seq = []
+			input_code_nl_indices = []
+			input_code_df_seq = []
+			input_code_var_seq = []
+			input_code_str_seq = []
+
+			for i in range(len(code_context)):
+				tok = code_context[i]
+				input_code_nl_indices.append([])
+
+				if tok in _START_VOCAB:
+					input_code_seq.append(_START_VOCAB.index(tok))
+					input_code_df_seq.append(-1)
+					input_code_var_seq.append(-1)
+					input_code_str_seq.append(-1)
+					continue
+
+				nl_lower = [tok.lower() for tok in nl]
+				if tok.lower() in nl_lower:
+					input_code_nl_indices[-1].append(nl_lower.index(tok.lower()))
+				elif ("'" + tok.lower() + "'") in nl_lower:
+					input_code_nl_indices[-1].append(nl_lower.index("'" + tok.lower() + "'"))
+				elif ('"' + tok.lower() + '"') in nl_lower:
+					input_code_nl_indices[-1].append(nl_lower.index('"' + tok.lower() + '"'))
+				elif tok[0] in ["'", '"'] and tok[-1] in ["'", '"'] and tok[1:-1].lower() in nl_lower:
+					input_code_nl_indices[-1].append(nl_lower.index(tok[1:-1].lower()))
+				elif '_' in tok.lower():
+					if tok[0] in ["'", '"'] and tok[-1] in ["'", '"']:
+						tok_list = tok[1:-1].split('_')
+					else:
+						tok_list = tok.split('_')
+					for sub_tok in tok_list:
+						if sub_tok.lower() in nl_lower:
+							input_code_nl_indices[-1].append(nl_lower.index(sub_tok.lower()))
+				if len(input_code_nl_indices[-1]) > 2:
+					input_code_nl_indices[-1] = input_code_nl_indices[-1][:2]
+				elif len(input_code_nl_indices[-1]) < 2:
+					input_code_nl_indices[-1] = input_code_nl_indices[-1] + [len(nl)] * (2 - len(input_code_nl_indices[-1]))
+
+				if tok in self.code_vocab:
+					input_code_seq.append(self.code_vocab[tok] + self.vocab_offset)
+
+					if tok in reserved_dfs:
+						input_code_df_seq.append(reserved_dfs.index(tok))
+					else:
+						input_code_df_seq.append(-1)
+					if tok in reserved_vars:
+						input_code_var_seq.append(reserved_vars.index(tok))
+					else:
+						input_code_var_seq.append(-1)
+					if len(tok) > 2 and tok[0] in ["'", '"'] and tok[-1] in ["'", '"'] and tok[1:-1] in reserved_strs:
+						input_code_str_seq.append(reserved_strs.index(tok[1:-1]))
+					else:
+						input_code_str_seq.append(-1)
+				elif tok in reserved_dfs:
+					input_code_seq.append(DF_ID)
+					input_code_df_seq.append(reserved_dfs.index(tok))
+					input_code_var_seq.append(-1)
+					input_code_str_seq.append(-1)
+				elif tok in reserved_vars:
+					input_code_seq.append(VAR_ID)
+					input_code_df_seq.append(-1)
+					input_code_var_seq.append(reserved_vars.index(tok))
+					input_code_str_seq.append(-1)
+				elif tok[-1] in ["'", '"']:
+					input_code_seq.append(STR_ID)
+					if len(tok) > 2 and tok[0] in ["'", '"'] and tok[-1] in ["'", '"'] and tok[1:-1] in reserved_strs:
+						input_code_str_seq.append(reserved_strs.index(tok[1:-1]))
+					else:
+						input_code_str_seq.append(-1)
+					input_code_df_seq.append(-1)
+					input_code_var_seq.append(-1)
+				elif tok[0].isdigit() or tok[0] == '-' or '.' in tok:
+					input_code_seq.append(VALUE_ID)
+					input_code_df_seq.append(-1)
+					input_code_var_seq.append(-1)
+					input_code_str_seq.append(-1)
+				elif i < len(code_context) - 1 and code_context[i + 1] == '(':
+					input_code_seq.append(FUNC_ID)
+					input_code_df_seq.append(-1)
+					input_code_var_seq.append(-1)
+					input_code_str_seq.append(-1)
+				else:
+					reserved_vars.append(tok)
+					reserved_var_size += 1
+					input_code_seq.append(VAR_ID)
+					input_code_df_seq.append(-1)
+					input_code_var_seq.append(reserved_vars.index(tok))
+					input_code_str_seq.append(-1)
+
+			if not self.copy_mechanism:
+				for i in range(len(input_code_seq)):
+					if input_code_seq[i] == DF_ID and input_code_df_seq[i] != -1:
+						input_code_seq[i] = self.code_vocab_size + input_code_df_seq[i]
+					elif input_code_seq[i] == VAR_ID and input_code_var_seq[i] != -1:
+						input_code_seq[i] = self.code_vocab_size + reserved_df_size + input_code_var_seq[i]
+					elif input_code_seq[i] == STR_ID and input_code_str_seq[i] != -1:
+						input_code_seq[i] = self.code_vocab_size + reserved_df_size + reserved_var_size + input_code_str_seq[i]
+
+			for word in nl:
+				if word in self.word_vocab:
+					input_word_seq.append(self.word_vocab[word] + self.vocab_offset)
+				elif word in _START_VOCAB:
+					input_word_seq.append(_START_VOCAB.index(word))
+				elif word in reserved_vars:
+					input_word_seq.append(VAR_ID)
+				elif word in reserved_dfs:
+					input_word_seq.append(DF_ID)
+				elif word in reserved_strs:
+					str_idx = reserved_strs.index(word)
+					input_word_seq.append(STR_ID)
+				elif word[0] in ["'", '"'] and word[-1] in ["'", '"']:
+					tok = word[1:-1]
+					if tok in reserved_vars:
+						input_word_seq.append(VAR_ID)
+					elif tok in reserved_dfs:
+						input_word_seq.append(DF_ID)
+					else:
+						input_word_seq.append(UNK_ID)
+				else:
+					input_word_seq.append(UNK_ID)
+
+			input_word_seq += [EOS_ID]
+			input_code_seq += [EOS_ID]
+			output_code_mask = [1] * 3 + [0] * (self.vocab_offset - 3)
+			output_code_mask += list(self.default_program_mask)
+
+			for tok in input_code_seq:
+				if tok < self.code_vocab_size:
+					output_code_mask[tok] = 1
+
+			if not self.hierarchy:
+				output_code_mask += [1] * (reserved_df_size + reserved_var_size + reserved_str_size)
+			else:
+				output_code_mask += [0] * (reserved_df_size + reserved_var_size + reserved_str_size)
+
+			output_df_mask = [0] * (self.code_vocab_size + reserved_df_size + reserved_var_size + reserved_str_size)
+			for df_idx in range(reserved_df_size):
+				output_df_mask[self.code_vocab_size + df_idx] = 1
+				if reserved_dfs[df_idx] in self.code_vocab:
+					output_df_mask[self.code_vocab[reserved_dfs[df_idx]] + self.vocab_offset] = 1
+
+			output_var_mask = [0] * (self.code_vocab_size + reserved_df_size + reserved_var_size + reserved_str_size)
+			for var_idx in range(reserved_var_size):
+				output_var_mask[self.code_vocab_size + reserved_df_size + var_idx] = 1
+			for tok in code_context:
+				if tok in self.code_vocab:
+					output_var_mask[self.code_vocab[tok] + self.vocab_offset] = 1
+				if tok in self.code_vocab and not (tok in reserved_dfs + reserved_vars + reserved_strs + self.reserved_words) and not (tok[-1] in ['"', '"']) and not (tok[0].isdigit() or tok[0] == '-' or '.' in tok):
+					output_var_mask[self.code_vocab[tok] + self.vocab_offset] = 1
+
+			output_str_mask = [0] * (self.code_vocab_size + reserved_df_size + reserved_var_size + reserved_str_size)
+			for str_idx in range(reserved_str_size):
+				output_str_mask[self.code_vocab_size + reserved_df_size + reserved_var_size + str_idx] = 1
+			for tok in code_context:
+				if tok in self.code_vocab and not (tok in reserved_dfs + reserved_vars + reserved_strs + self.reserved_words) and tok[-1] in ['"', '"']:
+					output_str_mask[self.code_vocab[tok] + self.vocab_offset] = 1
+			for i in range(3, self.vocab_offset):
+				output_df_mask[i] = 0
+				output_var_mask[i] = 0
+				output_str_mask[i] = 0
+				if not self.hierarchy:
+					output_code_mask[i] = 0
+
+			output_code_indices = []
+			output_code_ctx_indices = []
+			for tok in self.code_vocab_list:
+				if tok in code_context:
+					output_code_ctx_indices.append(code_context.index(tok))
+				else:
+					output_code_ctx_indices.append(len(code_context))
+
+			output_code_nl_indices = []
+			for tok in self.code_vocab_list:
+				output_code_nl_indices.append([])
+				if tok in _START_VOCAB:
+					output_code_nl_indices[-1] += [len(nl), len(nl)]
+				elif tok in self.scatter_word_list:
+					nl_lower = [tok.lower() for tok in nl]
+					if 'scatter' in nl_lower:
+						output_code_nl_indices[-1] += [nl_lower.index('scatter'), len(nl)]
+					elif 'scatterplot' in nl_lower:
+						output_code_nl_indices[-1] += [nl_lower.index('scatterplot'), len(nl)]
+					else:
+						output_code_nl_indices[-1] += [len(nl), len(nl)]
+				elif tok in self.hist_word_list:
+					nl_lower = [tok.lower() for tok in nl]
+					if 'histogram' in nl_lower:
+						output_code_nl_indices[-1] += [nl_lower.index('histogram'), len(nl)]
+					elif 'histograms' in nl_lower:
+						output_code_nl_indices[-1] += [nl_lower.index('histograms'), len(nl)]
+					else:
+						output_code_nl_indices[-1] += [len(nl), len(nl)]
+				elif tok in self.pie_word_list:
+					nl_lower = [tok.lower() for tok in nl]
+					if 'pie' in nl_lower:
+						output_code_nl_indices[-1] += [nl_lower.index('pie'), len(nl)]
+					else:
+						output_code_nl_indices[-1] += [len(nl), len(nl)]
+				elif tok in self.scatter_plot_word_list:
+					nl_lower = [tok.lower() for tok in nl]
+					if 'scatter' in nl_lower:
+						output_code_nl_indices[-1] += [nl_lower.index('scatter')]
+					if 'line' in nl_lower:
+						output_code_nl_indices[-1] += [nl_lower.index('line')]
+					elif 'linear' in nl_lower:
+						output_code_nl_indices[-1] += [nl_lower.index('linear')]
+					if len(output_code_nl_indices[-1]) < 2:
+						output_code_nl_indices[-1] += [len(nl)] * (2 - len(output_code_nl_indices[-1]))
+				elif tok in self.hist_plot_word_list:
+					nl_lower = [tok.lower() for tok in nl]
+					if 'distribution' in nl_lower:
+						output_code_nl_indices[-1] += [nl_lower.index('distribution'), len(nl)]
+					else:
+						output_code_nl_indices[-1] += [len(nl), len(nl)]
+				elif tok in code_context:
+					output_code_nl_indices[-1] += input_code_nl_indices[code_context.index(tok)]
+				else:
+					output_code_nl_indices[-1] += [len(nl), len(nl)]
+
+
+			for tok in reserved_dfs + reserved_vars:
+				output_code_indices.append(code_context.index(tok))
+			for tok in reserved_strs:
+				if "'" + tok + "'" in code_context:
+					output_code_indices.append(code_context.index("'" + tok + "'"))
+				elif '"' + tok + '"' in code_context:
+					output_code_indices.append(code_context.index('"' + tok + '"'))
+				else:
+					output_code_indices.append(code_context.index(tok))
+
+			cur_data = {}
+			cur_data['reserved_dfs'] = reserved_dfs
+			cur_data['reserved_vars'] = reserved_vars
+			cur_data['reserved_strs'] = reserved_strs
+			cur_data['input_word_seq'] = input_word_seq
+			cur_data['input_code_seq'] = input_code_seq
+			cur_data['input_code_df_seq'] = input_code_df_seq
+			cur_data['input_code_var_seq'] = input_code_var_seq
+			cur_data['input_code_str_seq'] = input_code_str_seq
+			cur_data['input_code_nl_indices'] = input_code_nl_indices
+			# cur_data['output_code_seq'] = output_code_seq
+			# cur_data['output_code_df_seq'] = output_code_df_seq
+			# cur_data['output_code_var_seq'] = output_code_var_seq
+			# cur_data['output_code_str_seq'] = output_code_str_seq
+			cur_data['output_code_mask'] = output_code_mask
+			cur_data['output_df_mask'] = output_df_mask
+			cur_data['output_var_mask'] = output_var_mask
+			cur_data['output_str_mask'] = output_str_mask
+			cur_data['output_code_nl_indices'] = output_code_nl_indices
+			cur_data['output_code_ctx_indices'] = output_code_ctx_indices
+			cur_data['output_code_indices'] = output_code_indices
+			# cur_data['label'] = label
+			data.append(cur_data)
+		print('Number of samples (before preprocessing): ', len(samples))
+		print('Number of samples (after filtering): ', len(data))
+		return data
 
 	def get_batch(self, data, batch_size, start_idx):
 		data_size = len(data)

@@ -27,7 +27,7 @@ def get_arg_parser(title):
 	data_group = parser.add_argument_group('data')
 	data_group.add_argument('--train_dataset', type=str, default='../data/train_plot.json')
 	data_group.add_argument('--dev_dataset', type=str, default='../data/dev_plot_hard.json')
-	data_group.add_argument('--test_dataset', type=str, default='../data/test_plot.json')
+	data_group.add_argument('--test_dataset', type=str, default='../data/test.json')
 	data_group.add_argument('--code_vocab', type=str, default='../data/code_vocab.json')
 	data_group.add_argument('--word_vocab', type=str, default='../data/nl_vocab.json')
 	data_group.add_argument('--word_vocab_size', type=int, default=None)

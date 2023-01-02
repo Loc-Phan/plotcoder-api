@@ -15,12 +15,15 @@ pie_word_list = ['pie', "'pie'", '"pie"']
 scatter_plot_word_list = ['lmplot', 'regplot']
 hist_plot_word_list = ['distplot', 'kdeplot', 'contour']
 normal_plot_word_list = ['plot']
+add_plot = ['line','violinplot','boxplot','jointplot','stripplot','swarmplot','fill_between']
+other_plot = ['errorbar','heatmap','FacetGrid','PairGrid','diverging_palette','subplots','subplot','imshow','vlines','pointplot','lineplot',
+'factorplot','color_palette']
 
-reserved_words = scatter_word_list + hist_word_list + pie_word_list + scatter_plot_word_list + hist_plot_word_list + normal_plot_word_list
+reserved_words = scatter_word_list + hist_word_list + pie_word_list + scatter_plot_word_list + hist_plot_word_list + normal_plot_word_list + other_plot
 
 
 arg_parser = argparse.ArgumentParser(description='JuiCe plot data extraction')
-arg_parser.add_argument('--data_folder', type=str, default='./data',
+arg_parser.add_argument('--data_folder', type=str, default='../Code/data',
 	help="the folder where the datasets downloaded from the original JuiCe repo are stored. We will retrieve 'train.jsonl', 'dev.jsonl' and 'test.jsonl' here.")
 arg_parser.add_argument('--init_train_data_name', type=str, default='train.jsonl',
 	help="the filename of the original training data.")
@@ -28,7 +31,7 @@ arg_parser.add_argument('--init_dev_data_name', type=str, default='dev.jsonl',
 	help="the filename of the original dev data.")
 arg_parser.add_argument('--init_test_data_name', type=str, default='test.jsonl',
 	help="the filename of the original test data.")
-arg_parser.add_argument('--prep_train_data_name', type=str, default='train_plot.json',
+arg_parser.add_argument('--prep_train_data_name', type=str, default='train_plot_1.json',
 	help="the filename of the preprocessed training data. When set to None, it means that the training data is not preprocessed (this file is the most time-consuming for preprocessing).")
 arg_parser.add_argument('--prep_dev_data_name', type=str, default='dev_plot.json',
 	help="the filename of the preprocessed dev data. When set to None, it means that the dev data is not preprocessed.")
@@ -59,10 +62,17 @@ args = arg_parser.parse_args()
 def preprocess(data_folder, init_data_name, prep_data_name, prep_hard_data_name=None, additional_samples=[], is_train=True):
 	plot_samples = []
 	clean_samples = []
+	# filter_data = []
+	# ignored_data = []
+	# idx = 0
 	init_data_name = os.path.join(data_folder, init_data_name)
 	with open(init_data_name) as fin:
 		for i, line in enumerate(fin):
 			sample = json.loads(line)
+			# idx = i
+			# if idx == 100000:
+			# 	json.dump(filter_data, open(os.path.join(data_folder, "filter_plot.json"), 'w'))
+			# 	return
 
 			# extract code sequence without comments and empty strings
 			init_code_seq = sample['code_tokens']
@@ -79,6 +89,7 @@ def preprocess(data_folder, init_data_name, prep_data_name, prep_hard_data_name=
 					break
 				code_seq = code_seq[pos + 1:]
 			if not ('plt' in code_seq):
+				# ignored_data.append(sample)
 				continue
 
 			plot_calls = []
@@ -98,6 +109,7 @@ def preprocess(data_folder, init_data_name, prep_data_name, prep_hard_data_name=
 				exist_plot_calls = True
 				break
 			if not exist_plot_calls:
+				# filter_data.append("".join(code_seq))
 				continue
 
 			url = sample['metadata']['path']
@@ -108,7 +120,7 @@ def preprocess(data_folder, init_data_name, prep_data_name, prep_hard_data_name=
 			else:
 				plot_samples.append(sample)
 
-	print('number of samples in the original partition: ', len(plot_samples))
+	print('number of samples in the original partition: ' , len(plot_samples))
 	print('number of course-related samples in the partition: ', len(clean_samples))
 	json.dump(plot_samples, open(os.path.join(data_folder, prep_data_name), 'w'))
 	if len(additional_samples) > 0:
@@ -194,6 +206,23 @@ if args.prep_test_data_name:
 		prep_hard_data_name=args.prep_test_hard_data_name, additional_samples=train_plot_clean_samples[cnt_train_clean_samples // 2:], is_train=False)
 
 # build natural language word and code vocabularies
-if args.build_vocab:
-	assert args.init_train_data_name is not None
-	build_vocab(train_plot_samples)
+# if args.build_vocab:
+# 	assert args.init_train_data_name is not None
+# 	build_vocab(train_plot_samples)
+	
+	
+# def add_token_to_dict(seq, vocab_dict):
+# 	if seq in vocab_dict:
+# 		vocab_dict[seq] += 1
+# 	else:
+# 		vocab_dict[seq] = 1
+# 	return vocab_dict
+# init_data_name = os.path.join(args.test_dataset_1)
+# plot_dict = {}
+# with open(init_data_name) as fin:
+#     for i, line in enumerate(fin):
+#         sample = json.loads(line)
+#         for item in sample:
+#             output_gt = item['output_gt']
+#             print(output_gt)
+#             plot_dict = add_token_to_dict("".join(output_gt[0:3]), plot_dict)

@@ -88,13 +88,14 @@ def evaluate(args):
 		cnt_per_category[gt_label] += 1
 
 		gt_prog = data_processor.ids_to_prog(item, item['output_gt'])
-		print('gt_prog ', gt_prog, '\n')
+		print('gt_prog ', gt_prog[:-1])
 
 		if data_utils._PAD in gt_prog:
 			cnt_unpredictable += 1
 
 		pred_prog  = data_processor.ids_to_prog(item, predictions[i])
-		print('pred_prog ', pred_prog, "\n")
+		print('pred_prog ', "".join(pred_prog[:-1]))
+		print('============================')
 
 		pred_label = data_processor.label_extraction(pred_prog)
 		if args.joint_plot_types:
@@ -136,17 +137,14 @@ def evaluate(args):
 def inference(args):
 	data_processor = data_utils.DataProcessor(args)
 	init_test_data = data_processor.load_data(args.test_dataset)
-	test_data, test_indices = data_processor.preprocess(init_test_data)
-
+	test_data = data_processor.post_preprocess(init_test_data)
 	args.word_vocab_size = data_processor.word_vocab_size
 	args.code_vocab_size = data_processor.code_vocab_size
 	model_supervisor = create_model(args, data_processor.word_vocab, data_processor.code_vocab)
 	predictions = model_supervisor.inference(test_data)
 	for i, item in enumerate(test_data):
-		gt_prog = data_processor.ids_to_prog(item, item['output_gt'])
-		print("gt_prog", gt_prog, "\n") #important
 		pred_prog = data_processor.ids_to_prog(item, predictions[i])
-		print("Prediction: ","".join(pred_prog[:-1])) #important
+		print("Prediction: ","".join(pred_prog[:-1]))
 
 
 if __name__ == "__main__":
