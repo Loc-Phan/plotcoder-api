@@ -47,6 +47,26 @@ In the following we list some important arguments for data preprocessing:
 
 `python run.py --nl --use_comments --code_context  --target_code_transform`
 
+### API UI
+
+## Install library
+
+```
+
+conda create env -n py39 python=3.9
+
+conda activate py39
+
+```
+
+activate UI
+
+```
+uvicorn main:app --reload
+
+```
+
+
 ### Key arguments
 In the following we list some important arguments for running neural models:
 * `--nl`: include the previous natural language cell as the model input. Note that the current code does not support including natural language from multiple cells, because it may not make sense to add NL instructions for previous code cells instead of the current one to confuse the model.
