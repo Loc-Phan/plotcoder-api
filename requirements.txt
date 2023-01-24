@@ -5,3 +5,7 @@ numpy
 six
 ast2json
 pandas
+loguru
+tqdm
+
+python-multipart
