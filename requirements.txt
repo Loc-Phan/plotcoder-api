@@ -1,2 +1,7 @@
 fastapi
 uvicorn[standard]
+
+numpy
+six
+ast2json
+pandas
