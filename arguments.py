@@ -7,7 +7,7 @@ def get_arg_parser(title):
 	parser = argparse.ArgumentParser(description=title)
 	parser.add_argument('--cpu', action='store_true', default=False)
 	parser.add_argument('--inference', action='store_true', default=True)
-	parser.add_argument('--eval', action='store_true', default=False)
+	parser.add_argument('--eval', action='store_true', default=True)
 	parser.add_argument('--model_dir', type=str, default='../checkpoints/model_0')
 	parser.add_argument('--load_model', type=str, default='../checkpoints/model_0/ckpt-00001500')
 	parser.add_argument('--num_LSTM_layers', type=int, default=2)

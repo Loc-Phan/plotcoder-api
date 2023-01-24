@@ -69,6 +69,7 @@ def evaluate(args):
 	data_processor = data_utils.DataProcessor(args)
 	init_test_data = data_processor.load_data(args.test_dataset)
 	test_data, test_indices = data_processor.preprocess(init_test_data)
+	# print('test_data: ',test_data)
 
 	args.word_vocab_size = data_processor.word_vocab_size
 	args.code_vocab_size = data_processor.code_vocab_size
@@ -133,18 +134,31 @@ def evaluate(args):
 		print('label acc per category: ', i, label_acc_per_category[i], label_acc_per_category[i] * 1.0 / cnt_per_category[i])
 		print('data acc per category: ', i, data_acc_per_category[i], data_acc_per_category[i] * 1.0 / cnt_per_category[i])
 		print('acc per category: ', i, acc_per_category[i], acc_per_category[i] * 1.0 / cnt_per_category[i])
-		
+
+_PAD = b"_PAD"
 def inference(args):
 	data_processor = data_utils.DataProcessor(args)
 	init_test_data = data_processor.load_data(args.test_dataset)
 	test_data = data_processor.post_preprocess(init_test_data)
+	# print('test_data: ',test_data)
 	args.word_vocab_size = data_processor.word_vocab_size
 	args.code_vocab_size = data_processor.code_vocab_size
 	model_supervisor = create_model(args, data_processor.word_vocab, data_processor.code_vocab)
 	predictions = model_supervisor.inference(test_data)
 	for i, item in enumerate(test_data):
 		pred_prog = data_processor.ids_to_prog(item, predictions[i])
+		if _PAD in pred_prog:
+			pred_prog[pred_prog.index(_PAD)] = "*"
 		print("Prediction: ","".join(pred_prog[:-1]))
+		
+def prediction():
+	arg_parser = arguments.get_arg_parser('juice')
+	args = arg_parser.parse_args()
+	args.cuda = not args.cpu and torch.cuda.is_available()
+	random.seed(args.seed)
+	np.random.seed(args.seed)
+	inference(args)
+
 
 
 if __name__ == "__main__":
@@ -153,9 +167,5 @@ if __name__ == "__main__":
 	args.cuda = not args.cpu and torch.cuda.is_available()
 	random.seed(args.seed)
 	np.random.seed(args.seed)
-	if args.eval:
-		evaluate(args)
-	elif args.inference:
-		inference(args)
-	else:
-		train(args)	
+	# evaluate(args)
+	inference(args)
