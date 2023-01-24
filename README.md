@@ -25,6 +25,30 @@ In the following we list some important arguments for data preprocessing:
 * `--prep_dev_hard_data_name`, `--prep_test_hard_data_name`: filename of the homework or exam solutions extracted from the original training split of JuiCe. These are larger-scale sets for evaluation.
 * `--build_vocab`: set it to be `True` for building the vocabularies of natural language words and code tokens.
 
+### API UI
+
+## Install library
+
+```
+
+conda create env -n py39 python=3.9
+
+conda activate py39
+
+pip3 install -r requirements.txt
+
+pip3 install torch==1.12.1+cpu torchvision==0.13.1+cpu --extra-index-url https://download.pytorch.org/whl/cpu
+```
+
+activate UI
+
+```
+uvicorn main:app --reload
+
+```
+
+
+
 ## Run experiments
 
 1. To run the hierarchical model:
@@ -46,25 +70,6 @@ In the following we list some important arguments for data preprocessing:
 5. To run the LSTM decoder without the copy mechanism, i.e., one-hot encoding for data items as in prior work:
 
 `python run.py --nl --use_comments --code_context  --target_code_transform`
-
-### API UI
-
-## Install library
-
-```
-
-conda create env -n py39 python=3.9
-
-conda activate py39
-
-```
-
-activate UI
-
-```
-uvicorn main:app --reload
-
-```
 
 
 ### Key arguments
