@@ -167,5 +167,14 @@ if __name__ == "__main__":
 	args.cuda = not args.cpu and torch.cuda.is_available()
 	random.seed(args.seed)
 	np.random.seed(args.seed)
+<<<<<<< HEAD
 	# evaluate(args)
 	inference(args)
+=======
+	if args.eval:
+		evaluate(args)
+	elif args.inference:
+		inference(args)
+	else:
+		train(args)
+>>>>>>> 5824c98... add .keep file, update environments file
