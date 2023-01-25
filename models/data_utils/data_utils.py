@@ -209,6 +209,8 @@ class DataProcessor(object):
 		init_samples = json.load(open(filename, 'r'))
 		samples = []
 		for sample in init_samples:
+			# code_seq = sample['code_tokens']
+			# label = self.label_extraction(code_seq)
 			samples.append(sample)
 		return samples
 
@@ -707,7 +709,7 @@ class DataProcessor(object):
 				if not (tok in self.reserved_words):
 					code_idx += 1
 					continue
-				print('code_seq[code_idx + 1]: ',code_seq[code_idx + 1])
+				# print('code_seq[code_idx + 1]: ',code_seq[code_idx + 1])
 				if code_idx == len(code_seq) - 1 or code_seq[code_idx + 1] != '(':
 					code_idx += 1
 					continue
@@ -872,7 +874,7 @@ class DataProcessor(object):
 			input_code_df_seq = []
 			input_code_var_seq = []
 			input_code_str_seq = []
-
+			print(code_context)
 			for i in range(len(code_context)):
 				tok = code_context[i]
 				input_code_nl_indices.append([])
@@ -1434,11 +1436,13 @@ class DataProcessor(object):
 						nl = sample['nl'] + sample['comments'][:self.max_word_len - 1 - len(sample['nl'])]
 					else:
 						nl = sample['nl'][:self.max_word_len // 2 - 1] + sample['comments'][:self.max_word_len // 2]
-
+			print(code_context)			
+			print('reserved_dfs: ',reserved_dfs)
 			if not self.code_context:
 				code_context = []
 			if len(code_context) > self.max_code_context_len - 1:
 				code_context = code_context[1 - self.max_code_context_len:]
+
 			init_reserved_dfs = list(reserved_dfs)
 			for tok in init_reserved_dfs:
 				if not (tok in code_context):
@@ -1585,6 +1589,7 @@ class DataProcessor(object):
 			output_code_mask += list(self.default_program_mask)
 
 			for tok in input_code_seq:
+				# print('tok: ',tok)
 				if tok < self.code_vocab_size:
 					output_code_mask[tok] = 1
 
@@ -1605,14 +1610,14 @@ class DataProcessor(object):
 			for tok in code_context:
 				if tok in self.code_vocab:
 					output_var_mask[self.code_vocab[tok] + self.vocab_offset] = 1
-				if tok in self.code_vocab and not (tok in reserved_dfs + reserved_vars + reserved_strs + self.reserved_words) and not (tok[-1] in ['"', '"']) and not (tok[0].isdigit() or tok[0] == '-' or '.' in tok):
+				if tok in self.code_vocab and not (tok in reserved_dfs + reserved_vars + reserved_strs + self.reserved_words + sample['imports']) and not (tok[-1] in ['"', '"']) and not (tok[0].isdigit() or tok[0] == '-' or '.' in tok):
 					output_var_mask[self.code_vocab[tok] + self.vocab_offset] = 1
 
 			output_str_mask = [0] * (self.code_vocab_size + reserved_df_size + reserved_var_size + reserved_str_size)
 			for str_idx in range(reserved_str_size):
 				output_str_mask[self.code_vocab_size + reserved_df_size + reserved_var_size + str_idx] = 1
 			for tok in code_context:
-				if tok in self.code_vocab and not (tok in reserved_dfs + reserved_vars + reserved_strs + self.reserved_words) and tok[-1] in ['"', '"']:
+				if tok in self.code_vocab and not (tok in reserved_dfs + reserved_vars + reserved_strs + self.reserved_words + sample['imports']) and tok[-1] in ['"', '"']:
 					output_str_mask[self.code_vocab[tok] + self.vocab_offset] = 1
 			for i in range(3, self.vocab_offset):
 				output_df_mask[i] = 0
@@ -1709,6 +1714,7 @@ class DataProcessor(object):
 			cur_data['output_code_nl_indices'] = output_code_nl_indices
 			cur_data['output_code_ctx_indices'] = output_code_ctx_indices
 			cur_data['output_code_indices'] = output_code_indices
+			# print('sample_idx: ',sample_idx)
 			# cur_data['label'] = label
 			data.append(cur_data)
 		print('Number of samples (before preprocessing): ', len(samples))
