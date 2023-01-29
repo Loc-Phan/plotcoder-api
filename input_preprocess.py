@@ -19,7 +19,7 @@ import token as tk
 from token import EXACT_TOKEN_TYPES
 import builtins
 from keyword import kwlist
-from run import *
+# from run import *
 
 cookie_re = re.compile(r'^[ \t\f]*#.*?coding[:=][ \t]*([-\w.]+)', re.ASCII)
 blank_re = re.compile(br'^[ \t\f]*(?:[#\r\n]|$)', re.ASCII)
@@ -400,14 +400,37 @@ def normalize_nl_leave_code_tokenize(nl):
   # print(bs_string)
   return word_tokenize(bs_string)
 
+def extract_comments(tokens, types):
+    ''' returns each comment seperated by a tok separator.
+    :param tokens:
+    :param types:
+    :return:
+    '''
+    comments = []
+    # print(tokens, types)
+    for i,(tok, type) in enumerate(zip(tokens, types)):
+        if type == 'COMMENT':
+            comments.extend(tok.split() + ['COMMENTSEP'])
+        # if its a docstring
+        if type == 'STRING' and i and types[i-1] == 'INDENT':
+
+            tok = tok.replace("'''", ' docstring ').replace('"""', ' docstring ')
+            # no word tokenize since docstrings contain mainy special characters
+            # which word_tokenize screws up
+            comments.extend(tok.split() + ['COMMENTSEP'])
+
+    return comments
+
 def get_all_code_process(code):
     '''Lots of old code tokenization. We use "code_tokens_clean" '''
     try:
         targ_tokens, types = tokenize_and_templatize(code)
+        comments = extract_comments(targ_tokens, types)
     except:
         targ_tokens = None
     js = {
         'code_tokens': targ_tokens,
+        'comments': comments,
     }
     return js
 
@@ -424,6 +447,14 @@ def context_preprocess(context):
 
 def df_preprocess(df):
   return df
+
+def comment_preprocess(code):
+  try:
+      targ_tokens, types = tokenize_and_templatize(code)
+      comments = extract_comments(targ_tokens, types)
+  except:
+      comments = None
+  return comments
 
 def imports_preprocess(code):
   imports = []
@@ -443,5 +474,3 @@ def imports_preprocess(code):
       if tok not in ['import', 'as', '']:
         import_toks.append(tok)
   return import_toks
-
-print(context_preprocess("duration = credit['Duration'].values\nage = credit['Age'].values"))

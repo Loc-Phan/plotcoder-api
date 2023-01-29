@@ -1,8 +1,10 @@
 from loguru import logger
 
-from fastapi import APIRouter, Form
-from starlette.requests import Request
-
+from fastapi import APIRouter
+from pydantic import BaseModel
+import arguments
+import torch
+from run import inference
 
 api_router = APIRouter()
 
@@ -17,17 +19,22 @@ def welcome():
     result_dict['Message'] = 'Welcome to plotcoder-api System'
     return result_dict
 
+class Item(BaseModel):
+    natural_language: str
+    local_code_context: str
+    dataframe_schema: str = None
 
 @api_router.post('/infer/plotcoder/')
 def plotcode(
-    request: Request,
-    natural_language: str = Form(...),
-    local_code_content: str = Form(...),
-    dataframe_schema: str = Form(...),
+    item: Item
 ):
     # Run model here
+    arg_parser = arguments.get_arg_parser('juice')
+    args = arg_parser.parse_args()
+    args.cuda = not args.cpu and torch.cuda.is_available()
     # message = model(natural_language, local_code_content, dataframe_schema)
-    message = 'Result Template'
+    message = inference(args,item.natural_language,item.local_code_context)
+    # message = 'Result Template'
     response = dict()
     response['message'] = message
     return response
