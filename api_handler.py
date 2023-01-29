@@ -4,14 +4,11 @@ from fastapi import APIRouter
 from pydantic import BaseModel
 import arguments
 import torch
+import config as conf
 from run import inference
 
 api_router = APIRouter()
-
-arg_parser = arguments.get_arg_parser('juice')
-args = arg_parser.parse_args()
-args.cuda = not args.cpu and torch.cuda.is_available()
-
+conf.cuda = not conf.cpu and torch.cuda.is_available()
 # load model here
 MODEL = 1
 
@@ -33,7 +30,9 @@ def plotcode(
 ):
     # Run model here
     # message = model(natural_language, local_code_content, dataframe_schema)
-    message = inference(args,item.natural_language,item.local_code_context)
+    message = inference(
+            conf, item.natural_language, item.local_code_context
+    )
     response = dict()
     response['message'] = message
     return response
