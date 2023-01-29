@@ -8,6 +8,9 @@ from run import inference
 
 api_router = APIRouter()
 
+arg_parser = arguments.get_arg_parser('juice')
+args = arg_parser.parse_args()
+args.cuda = not args.cpu and torch.cuda.is_available()
 
 # load model here
 MODEL = 1
@@ -29,12 +32,8 @@ def plotcode(
     item: Item
 ):
     # Run model here
-    arg_parser = arguments.get_arg_parser('juice')
-    args = arg_parser.parse_args()
-    args.cuda = not args.cpu and torch.cuda.is_available()
     # message = model(natural_language, local_code_content, dataframe_schema)
     message = inference(args,item.natural_language,item.local_code_context)
-    # message = 'Result Template'
     response = dict()
     response['message'] = message
     return response
