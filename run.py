@@ -151,12 +151,12 @@ def inference(args,natural_language,local_code_context):
 	args.code_vocab_size = data_processor.code_vocab_size
 	model_supervisor = create_model(args, data_processor.word_vocab, data_processor.code_vocab)
 	predictions = model_supervisor.inference(test_data)
-		
+
 	pred_prog = data_processor.ids_to_prog(test_data[0], predictions[0])
 	if _PAD in pred_prog:
 		pred_prog[pred_prog.index(_PAD)] = "*"
 	return "".join(pred_prog[:-1])
-		
+
 def prediction():
 	arg_parser = arguments.get_arg_parser('juice')
 	args = arg_parser.parse_args()

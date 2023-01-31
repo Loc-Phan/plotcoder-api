@@ -9,3 +9,7 @@ loguru
 tqdm
 
 python-multipart
+markdown2
+bs4
+nltk
+token
