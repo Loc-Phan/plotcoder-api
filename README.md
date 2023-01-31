@@ -31,9 +31,9 @@ In the following we list some important arguments for data preprocessing:
 
 ```
 
-conda create env -n py39 python=3.9
+conda create env -n py38 python=3.8
 
-conda activate py39
+conda activate py38
 
 pip3 install -r requirements.txt
 
