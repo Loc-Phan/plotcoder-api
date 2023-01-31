@@ -26,7 +26,7 @@ def download_weight(conf):
         open(conf.code_vocab, 'wb').write(r.content)
     if not path.exists(conf.word_vocab):
         logger.info('Download word vocab file')
-        word_vocab_link = github_link + 'code_vocab.json'
+        word_vocab_link = github_link + 'nl_vocab.json'
         r = requests.get(word_vocab_link, allow_redirects=True)
         open(conf.word_vocab, 'wb').write(r.content)
     pass
