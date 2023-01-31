@@ -6,12 +6,32 @@ import arguments
 import torch
 import config as conf
 from run import inference
+import requests
+from os import path
 
 api_router = APIRouter()
 conf.cuda = not conf.cpu and torch.cuda.is_available()
-# load model here
-MODEL = 1
 
+def download_weight(conf):
+    github_link = 'https://github.com/Loc-Phan/plotcoder-api/releases/download/v1.0.0/'
+    if not path.exists(conf.load_model):
+        logger.info('Download ckpt file')
+        model_link = github_link + 'ckpt-00001500'
+        r = requests.get(model_link, allow_redirects=True)
+        open(conf.load_model, 'wb').write(r.content)
+    if not path.exists(conf.code_vocab):
+        logger.info('Download code vocab file')
+        code_vocab_link = github_link + 'code_vocab.json'
+        r = requests.get(code_vocab_link, allow_redirects=True)
+        open(conf.code_vocab, 'wb').write(r.content)
+    if not path.exists(conf.word_vocab):
+        logger.info('Download word vocab file')
+        word_vocab_link = github_link + 'code_vocab.json'
+        r = requests.get(word_vocab_link, allow_redirects=True)
+        open(conf.word_vocab, 'wb').write(r.content)
+    pass
+
+download_weight(conf)
 
 @api_router.get('/welcome/')
 def welcome():
