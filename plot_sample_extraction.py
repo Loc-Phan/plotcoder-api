@@ -20,7 +20,7 @@ reserved_words = scatter_word_list + hist_word_list + pie_word_list + scatter_pl
 
 
 arg_parser = argparse.ArgumentParser(description='JuiCe plot data extraction')
-arg_parser.add_argument('--data_folder', type=str, default='../Code/data',
+arg_parser.add_argument('--data_folder', type=str, default='../data',
 	help="the folder where the datasets downloaded from the original JuiCe repo are stored. We will retrieve 'train.jsonl', 'dev.jsonl' and 'test.jsonl' here.")
 arg_parser.add_argument('--init_train_data_name', type=str, default='train.jsonl',
 	help="the filename of the original training data.")

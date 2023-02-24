@@ -11,15 +11,24 @@ import torch
 
 import arguments
 import models
+import torch.nn as nn
 import models.data_utils.data_utils as data_utils
 import models.model_utils as model_utils
 from models.model import PlotCodeGenerator
+from models.transformer import PlotCodeGeneratorTrans
+from arguments import Arguments
 from input_preprocess import nl_preprocess, context_preprocess, imports_preprocess, comment_preprocess
 
 def create_model(args, word_vocab, code_vocab):
-	model = PlotCodeGenerator(args, word_vocab, code_vocab)
+	if args.lstm:
+		model = PlotCodeGenerator(args, word_vocab, code_vocab)
+	else:
+		model = PlotCodeGeneratorTrans(args, word_vocab, code_vocab)
 	if model.cuda_flag:
-		model = model.cuda()
+		device = torch.device("cuda")
+		model = model.to(device)
+	if torch.cuda.device_count() > 1:
+		model = nn.DataParallel(model, [0, 1])
 	model_supervisor = model_utils.Supervisor(model, args)
 	if args.load_model:
 		model_supervisor.load_pretrained(args.load_model)
@@ -165,17 +174,11 @@ def prediction():
 	np.random.seed(args.seed)
 	inference(args)
 
-
-
 if __name__ == "__main__":
-	arg_parser = arguments.get_arg_parser('juice')
-	args = arg_parser.parse_args()
-	args.cuda = not args.cpu and torch.cuda.is_available()
+	args = Arguments()
 	random.seed(args.seed)
 	np.random.seed(args.seed)
 	if args.eval:
-		evaluate(args)
-	elif args.inference:
-		inference(args)
+			evaluate(args)
 	else:
-		train(args)
+			train(args)
