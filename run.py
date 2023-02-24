@@ -138,11 +138,11 @@ def evaluate(args):
 
 _PAD = b"_PAD"
 
-def inference(args,natural_language,local_code_context):
+def inference(args,natural_language,local_code_context,dataframe_schema=None):
 	data_processor = data_utils.DataProcessor(args)
 	# init_test_data = data_processor.load_data(args.test_dataset)
 	nl = nl_preprocess(natural_language)
-	context = context_preprocess(local_code_context)
+	context = context_preprocess(dataframe_schema) + context_preprocess(local_code_context)
 	imports = imports_preprocess(local_code_context)
 	comments = comment_preprocess(local_code_context)
 	data = {"nl":nl,"context":context,"imports":imports,"comments":comments}
@@ -173,13 +173,9 @@ if __name__ == "__main__":
 	args.cuda = not args.cpu and torch.cuda.is_available()
 	random.seed(args.seed)
 	np.random.seed(args.seed)
-	# evaluate(args)
-	nl = "Create a scatter plot of the observations in the 'credit' dataset for the attributes 'Duration' and 'Age' (age should be shown on the xaxis)"
-	code = "# Your code goes here\nduration = credit['Duration'].values\nage = credit['Age'].values\nplt.figure(figsize=(8,6))"
-	print(inference(args,nl,code))
-	# if args.eval:
-	# 	evaluate(args)
-	# elif args.inference:
-	# 	inference(args)
-	# else:
-	# 	train(args)
+	if args.eval:
+		evaluate(args)
+	elif args.inference:
+		inference(args)
+	else:
+		train(args)

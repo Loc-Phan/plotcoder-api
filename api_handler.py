@@ -51,7 +51,7 @@ def plotcode(
     # Run model here
     # message = model(natural_language, local_code_content, dataframe_schema)
     message = inference(
-            conf, item.natural_language, item.local_code_context
+            conf, item.natural_language, item.local_code_context, item.dataframe_schema
     )
     response = dict()
     response['message'] = message
