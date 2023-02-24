@@ -874,7 +874,7 @@ class DataProcessor(object):
 			input_code_df_seq = []
 			input_code_var_seq = []
 			input_code_str_seq = []
-			print(code_context)
+			# print(code_context)
 			for i in range(len(code_context)):
 				tok = code_context[i]
 				input_code_nl_indices.append([])

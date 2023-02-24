@@ -15,11 +15,8 @@ pie_word_list = ['pie', "'pie'", '"pie"']
 scatter_plot_word_list = ['lmplot', 'regplot']
 hist_plot_word_list = ['distplot', 'kdeplot', 'contour']
 normal_plot_word_list = ['plot']
-add_plot = ['line','violinplot','boxplot','jointplot','stripplot','swarmplot','fill_between']
-other_plot = ['errorbar','heatmap','FacetGrid','PairGrid','diverging_palette','subplots','subplot','imshow','vlines','pointplot','lineplot',
-'factorplot','color_palette']
 
-reserved_words = scatter_word_list + hist_word_list + pie_word_list + scatter_plot_word_list + hist_plot_word_list + normal_plot_word_list + other_plot
+reserved_words = scatter_word_list + hist_word_list + pie_word_list + scatter_plot_word_list + hist_plot_word_list + normal_plot_word_list
 
 
 arg_parser = argparse.ArgumentParser(description='JuiCe plot data extraction')
@@ -31,7 +28,7 @@ arg_parser.add_argument('--init_dev_data_name', type=str, default='dev.jsonl',
 	help="the filename of the original dev data.")
 arg_parser.add_argument('--init_test_data_name', type=str, default='test.jsonl',
 	help="the filename of the original test data.")
-arg_parser.add_argument('--prep_train_data_name', type=str, default='train_plot_1.json',
+arg_parser.add_argument('--prep_train_data_name', type=str, default='train_plot.json',
 	help="the filename of the preprocessed training data. When set to None, it means that the training data is not preprocessed (this file is the most time-consuming for preprocessing).")
 arg_parser.add_argument('--prep_dev_data_name', type=str, default='dev_plot.json',
 	help="the filename of the preprocessed dev data. When set to None, it means that the dev data is not preprocessed.")
@@ -206,9 +203,9 @@ if args.prep_test_data_name:
 		prep_hard_data_name=args.prep_test_hard_data_name, additional_samples=train_plot_clean_samples[cnt_train_clean_samples // 2:], is_train=False)
 
 # build natural language word and code vocabularies
-# if args.build_vocab:
-# 	assert args.init_train_data_name is not None
-# 	build_vocab(train_plot_samples)
+if args.build_vocab:
+	assert args.init_train_data_name is not None
+	build_vocab(train_plot_samples)
 	
 	
 # def add_token_to_dict(seq, vocab_dict):

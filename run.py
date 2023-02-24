@@ -14,6 +14,7 @@ import models
 import models.data_utils.data_utils as data_utils
 import models.model_utils as model_utils
 from models.model import PlotCodeGenerator
+from input_preprocess import nl_preprocess, context_preprocess, imports_preprocess, comment_preprocess
 
 def create_model(args, word_vocab, code_vocab):
 	model = PlotCodeGenerator(args, word_vocab, code_vocab)
@@ -136,21 +137,26 @@ def evaluate(args):
 		print('acc per category: ', i, acc_per_category[i], acc_per_category[i] * 1.0 / cnt_per_category[i])
 
 _PAD = b"_PAD"
-def inference(args):
+
+def inference(args,natural_language,local_code_context,dataframe_schema=None):
 	data_processor = data_utils.DataProcessor(args)
-	init_test_data = data_processor.load_data(args.test_dataset)
-	test_data = data_processor.post_preprocess(init_test_data)
-	# print('test_data: ',test_data)
+	# init_test_data = data_processor.load_data(args.test_dataset)
+	nl = nl_preprocess(natural_language)
+	context = context_preprocess(dataframe_schema) + context_preprocess(local_code_context)
+	imports = imports_preprocess(local_code_context)
+	comments = comment_preprocess(local_code_context)
+	data = {"nl":nl,"context":context,"imports":imports,"comments":comments}
+	test_data = data_processor.post_preprocess([data])
 	args.word_vocab_size = data_processor.word_vocab_size
 	args.code_vocab_size = data_processor.code_vocab_size
 	model_supervisor = create_model(args, data_processor.word_vocab, data_processor.code_vocab)
 	predictions = model_supervisor.inference(test_data)
-	for i, item in enumerate(test_data):
-		pred_prog = data_processor.ids_to_prog(item, predictions[i])
-		if _PAD in pred_prog:
-			pred_prog[pred_prog.index(_PAD)] = "*"
-		print("Prediction: ","".join(pred_prog[:-1]))
-		
+
+	pred_prog = data_processor.ids_to_prog(test_data[0], predictions[0])
+	if _PAD in pred_prog:
+		pred_prog[pred_prog.index(_PAD)] = "*"
+	return "".join(pred_prog[:-1])
+
 def prediction():
 	arg_parser = arguments.get_arg_parser('juice')
 	args = arg_parser.parse_args()
@@ -167,14 +173,9 @@ if __name__ == "__main__":
 	args.cuda = not args.cpu and torch.cuda.is_available()
 	random.seed(args.seed)
 	np.random.seed(args.seed)
-<<<<<<< HEAD
-	# evaluate(args)
-	inference(args)
-=======
 	if args.eval:
 		evaluate(args)
 	elif args.inference:
 		inference(args)
 	else:
 		train(args)
->>>>>>> 5824c98... add .keep file, update environments file
