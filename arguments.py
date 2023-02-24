@@ -3,6 +3,72 @@ import time
 import os
 import sys
 
+class Arguments:
+    def __init__(self):
+
+        #
+        self.lstm = True
+        self.cpu = False
+        self.eval = False
+        self.model_dir = './kaggle/working'
+        self.load_model = False#'./kaggle/working/ckpt-00001000'
+        self.num_LSTM_layers = 2
+        self.num_MLP_layers = 1
+        self.LSTM_hidden_size = 256
+        self.MLP_hidden_size = 512
+        self.embedding_size = 256
+
+        self.n_heads = 4
+        self.n_layers = 3
+        self.dim_forward = 256
+
+        self.keep_last_n = None
+        self.eval_every_n = 10
+        self.log_interval = 10
+        self.log_dir = './kaggle/working'
+        self.log_name = 'model_0.csv'
+
+        self.max_eval_size = 32
+
+        #data
+        self.train_dataset = "./data/" + 'train_plot.json'
+        self.dev_dataset = "./data/" + 'test_plot.json'
+        self.test_dataset = "./data/" + 'test_plot.json'
+        self.code_vocab = "./data/" + 'code_vocab.json'
+        self.word_vocab = "./data/" + 'nl_vocab.json'
+        self.cpu = False
+        self.cuda = False
+        self.num_plot_types = 6
+        self.joint_plot_types = False
+        self.data_order_invariant = False
+        self.nl = True
+        self.use_comments = True
+        self.code_context = True
+        self.local_df_only = False
+        self.target_code_transform = True
+        self.max_num_code_cells = 2
+        self.max_word_len = 512 
+        self.max_code_context_len = 512
+        self.max_decode_len = 200
+
+
+        #model
+        self.hierarchy = True
+        self.copy_mechanism = True
+        self.nl_code_linking = True
+
+        #train
+        self.optimizer ='adam'
+        self.lr = 1e-3
+        self.lr_decay_steps = 600
+        self.lr_decay_rate = 0.9
+        self.dropout_rate = 0.2
+        self.gradient_clip = 5.0
+        self.num_epochs = 10
+        self.batch_size = 32
+        self.param_init = 0.1
+        self.seed = 1312002
+
 def get_arg_parser(title):
 	parser = argparse.ArgumentParser(description=title)
 	parser.add_argument('--cpu', action='store_true', default=False)
