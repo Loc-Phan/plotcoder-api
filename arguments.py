@@ -11,12 +11,12 @@ class Arguments:
         self.cpu = False
         self.eval = False
         self.model_dir = './kaggle/working'
-        self.load_model = False#'./kaggle/working/ckpt-00001000'
+        self.load_model = './checkpoints/model_0/ckpt-00002000'
         self.num_LSTM_layers = 2
         self.num_MLP_layers = 1
-        self.LSTM_hidden_size = 256
+        self.LSTM_hidden_size = 512
         self.MLP_hidden_size = 512
-        self.embedding_size = 256
+        self.embedding_size = 512
 
         self.n_heads = 4
         self.n_layers = 3
@@ -60,7 +60,7 @@ class Arguments:
         #train
         self.optimizer ='adam'
         self.lr = 1e-3
-        self.lr_decay_steps = 600
+        self.lr_decay_steps = 6000
         self.lr_decay_rate = 0.9
         self.dropout_rate = 0.2
         self.gradient_clip = 5.0
@@ -72,8 +72,8 @@ class Arguments:
 def get_arg_parser(title):
 	parser = argparse.ArgumentParser(description=title)
 	parser.add_argument('--cpu', action='store_true', default=False)
-	parser.add_argument('--inference', action='store_true', default=True)
-	parser.add_argument('--eval', action='store_true', default=False)
+	parser.add_argument('--inference', action='store_true', default=False)
+	parser.add_argument('--eval', action='store_true', default=True)
 	parser.add_argument('--model_dir', type=str, default='./checkpoints/model_0')
 	parser.add_argument('--load_model', type=str, default='./checkpoints/model_0/ckpt-00001500')
 	parser.add_argument('--num_LSTM_layers', type=int, default=2)
@@ -93,7 +93,7 @@ def get_arg_parser(title):
 	data_group = parser.add_argument_group('data')
 	data_group.add_argument('--train_dataset', type=str, default='../data/train_plot.json')
 	data_group.add_argument('--dev_dataset', type=str, default='../data/dev_plot_hard.json')
-	data_group.add_argument('--test_dataset', type=str, default='./data/test.json')
+	data_group.add_argument('--test_dataset', type=str, default='./data/test_plot.json')
 	data_group.add_argument('--code_vocab', type=str, default='./data/code_vocab.json')
 	data_group.add_argument('--word_vocab', type=str, default='./data/nl_vocab.json')
 	data_group.add_argument('--word_vocab_size', type=int, default=None)

@@ -2,7 +2,7 @@ cpu = False
 inference = True
 eval = False
 model_dir = './checkpoints/model_0'
-load_model = './checkpoints/model_0/ckpt-00001500'
+load_model = './checkpoints/model_0/ckpt-00002000'
 num_LSTM_layers = 2
 num_MLP_layers = 1
 LSTM_hidden_size = 512
@@ -14,10 +14,11 @@ eval_every_n = 1500
 log_interval = 1500
 log_dir = '../logs'
 log_name = 'model_0.csv'
+lstm = True
 
-max_eval_size = 1000
+max_eval_size = 32
 
-dev_dataset = '../data/dev_plot_hard.json'
+dev_dataset = './data/dev_plot_hard.json'
 test_dataset = './data/test.json'
 code_vocab = './data/code_vocab.json'
 word_vocab = './data/nl_vocab.json'
@@ -36,9 +37,12 @@ max_word_len = 512
 max_code_context_len = 512
 max_decode_len = 200
 
-hierarchy = False
+hierarchy = True
 copy_mechanism = True
 nl_code_linking = True
+n_heads = 4
+n_layers = 3
+dim_forward = 256
 
 optimizer = 'adam'
 # choices=['adam', 'sgd', 'rmsprop']

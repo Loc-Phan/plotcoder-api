@@ -16,7 +16,7 @@ def download_weight(conf):
     github_link = 'https://github.com/Loc-Phan/plotcoder-api/releases/download/v1.0.0/'
     if not path.exists(conf.load_model):
         logger.info('Download ckpt file')
-        model_link = github_link + 'ckpt-00001500'
+        model_link = github_link + 'ckpt-00002000'
         r = requests.get(model_link, allow_redirects=True)
         open(conf.load_model, 'wb').write(r.content)
     if not path.exists(conf.code_vocab):
